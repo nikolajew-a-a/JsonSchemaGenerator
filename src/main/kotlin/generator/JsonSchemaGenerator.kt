@@ -11,10 +11,18 @@ object JsonSchemaGenerator {
     private const val FIELD_ITEMS = "items"
     private const val FIELD_ENUM = "enum"
 
+    fun accept(descriptor: SerialDescriptor): JsonObject = acceptInternal(
+        descriptor = descriptor,
+        annotations = emptyList()
+    )
+
     @OptIn(ExperimentalSerializationApi::class)
-    fun accept(descriptor: SerialDescriptor): JsonObject = with(descriptor.kind) {
+    private fun acceptInternal(
+        descriptor: SerialDescriptor,
+        annotations: List<Annotation>
+    ): JsonObject = with(descriptor.kind) {
         when (this) {
-            SerialKind.ENUM -> acceptEnum(descriptor)
+            SerialKind.ENUM -> acceptEnum(annotations =  annotations)
             SerialKind.CONTEXTUAL -> this.throwNotSupported()
 
             PrimitiveKind.BOOLEAN -> acceptBoolean()
@@ -29,8 +37,8 @@ object JsonSchemaGenerator {
             PrimitiveKind.STRING -> acceptString()
             PrimitiveKind.CHAR -> this.throwNotSupported()
 
-            StructureKind.CLASS -> acceptClass(descriptor)
-            StructureKind.LIST -> acceptList(descriptor)
+            StructureKind.CLASS -> acceptClass(descriptor = descriptor)
+            StructureKind.LIST -> acceptList(descriptor = descriptor)
             StructureKind.MAP -> this.throwNotSupported()
             StructureKind.OBJECT -> this.throwNotSupported()
 
@@ -39,13 +47,17 @@ object JsonSchemaGenerator {
         }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    private fun acceptEnum(descriptor: SerialDescriptor): JsonObject {
-        val allElementNames = (0 until descriptor.elementsCount).map(descriptor::getElementName)
+    private fun acceptEnum(annotations: List<Annotation>): JsonObject {
+        val enumEntriesAnnotation = annotations.filterIsInstance<EnumEntries>()
+        check(enumEntriesAnnotation.size == 1) {
+            "Enum class should be annotated by single @EnumEntries annotation"
+        }
+        val enumEntriesNames = enumEntriesAnnotation.first().entries
+
         return JsonObject(
             mapOf(
                 FIELD_TYPE to JsonPrimitive(JsonSchemaElementType.STRING.value),
-                FIELD_ENUM to JsonArray(allElementNames.map(::JsonPrimitive))
+                FIELD_ENUM to JsonArray(enumEntriesNames.map(::JsonPrimitive))
             )
         )
     }
@@ -80,7 +92,8 @@ object JsonSchemaGenerator {
 
         descriptor.elementDescriptors.forEachIndexed { index, child ->
             val elementName = descriptor.getElementName(index)
-            properties[elementName] = accept(child)
+            val elementAnnotations = descriptor.getElementAnnotations(index)
+            properties[elementName] = acceptInternal(descriptor = child, annotations = elementAnnotations)
         }
 
         return JsonObject(

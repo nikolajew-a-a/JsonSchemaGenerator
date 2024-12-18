@@ -1,6 +1,10 @@
 package org.example
 
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
+import org.example.ElementType.Companion.COLLECTION_VALUE
+import org.example.ElementType.Companion.MOVIE_VALUE
+import org.example.ElementType.Companion.SERIAL_VALUE
+import org.example.generator.EnumEntries
 
 
 @Serializable
@@ -9,6 +13,7 @@ data class ExampleData(
     val id: Int,
     val nestedData: NestedData,
     val someList: List<String>,
+    @EnumEntries(entries = [COLLECTION_VALUE, MOVIE_VALUE])
     val type: ElementType,
 )
 
@@ -16,9 +21,19 @@ data class ExampleData(
 data class NestedData(
     val title: String,
     val isBest: Boolean,
+    @EnumEntries(entries = [COLLECTION_VALUE, MOVIE_VALUE, SERIAL_VALUE])
     val elementType: ElementType
 )
 
 enum class ElementType {
-    COLLECTION, MOVIE, SERIAL;
+    COLLECTION,
+    MOVIE,
+    SERIAL;
+
+    companion object {
+        const val COLLECTION_VALUE = "COLLECTION"
+        const val MOVIE_VALUE = "MOVIE"
+        const val SERIAL_VALUE = "SERIAL"
+    }
+
 }
