@@ -116,7 +116,7 @@ object JsonSchemaGenerator {
         return JsonObject(
             mapOf(
                 FIELD_TYPE to JsonPrimitive(JsonSchemaElementType.ARRAY.value),
-                FIELD_ITEMS to accept(childDescriptors.first())
+                FIELD_ITEMS to acceptInternal(childDescriptors.first(), emptyList())
             )
         )
     }
