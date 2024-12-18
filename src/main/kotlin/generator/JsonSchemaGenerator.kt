@@ -3,6 +3,7 @@ package org.example.generator
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.json.*
+import org.example.generator.annotations.EnumEntries
 
 object JsonSchemaGenerator {
 

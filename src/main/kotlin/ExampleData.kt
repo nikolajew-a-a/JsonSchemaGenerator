@@ -4,7 +4,7 @@ import kotlinx.serialization.*
 import org.example.ElementType.Companion.COLLECTION_VALUE
 import org.example.ElementType.Companion.MOVIE_VALUE
 import org.example.ElementType.Companion.SERIAL_VALUE
-import org.example.generator.EnumEntries
+import org.example.generator.annotations.EnumEntries
 
 
 @Serializable
