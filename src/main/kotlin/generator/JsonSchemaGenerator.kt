@@ -3,6 +3,7 @@ package org.example.generator
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.json.*
+import org.example.generator.annotations.AnyOf
 import org.example.generator.annotations.EnumEntries
 
 object JsonSchemaGenerator {
@@ -11,6 +12,7 @@ object JsonSchemaGenerator {
     private const val FIELD_PROPERTIES = "properties"
     private const val FIELD_ITEMS = "items"
     private const val FIELD_ENUM = "enum"
+    private const val FIELD_ANY_OF = "anyOf"
 
     fun accept(descriptor: SerialDescriptor): JsonObject = acceptInternal(
         descriptor = descriptor,
@@ -23,7 +25,7 @@ object JsonSchemaGenerator {
         annotations: List<Annotation>
     ): JsonObject = with(descriptor.kind) {
         when (this) {
-            SerialKind.ENUM -> acceptEnum(annotations =  annotations)
+            SerialKind.ENUM -> acceptEnum(annotations = annotations)
             SerialKind.CONTEXTUAL -> this.throwNotSupported()
 
             PrimitiveKind.BOOLEAN -> acceptBoolean()
@@ -43,7 +45,7 @@ object JsonSchemaGenerator {
             StructureKind.MAP -> this.throwNotSupported()
             StructureKind.OBJECT -> this.throwNotSupported()
 
-            PolymorphicKind.SEALED -> acceptSealedClass()
+            PolymorphicKind.SEALED -> acceptSealedClass(descriptor = descriptor, annotations = annotations)
             PolymorphicKind.OPEN -> this.throwNotSupported()
         }
     }
@@ -119,8 +121,26 @@ object JsonSchemaGenerator {
         )
     }
 
-    private fun acceptSealedClass(): JsonObject {
-        throw IllegalArgumentException("Sealed classes not supported yet")
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun acceptSealedClass(
+        descriptor: SerialDescriptor,
+        annotations: List<Annotation>
+    ): JsonObject {
+        val anyOfAnnotations = annotations.filterIsInstance<AnyOf>()
+        check(anyOfAnnotations.size == 1) {
+            "Sealed class should be annotated by single @AnyOf annotation"
+        }
+
+        val elementDescriptors = descriptor.elementDescriptors.toList()
+        check(elementDescriptors.size == 2) {
+            """
+            Sealed class should have 2 elementDescriptors:
+            1. For property "type". This property's descriptor.kind is PrimitiveKind.STRING
+            2. For subclasses. For this descriptor.kind is SerialKind.CONTEXTUAL
+            """
+        }
+        val subclassesJsonObjects = elementDescriptors[1].elementDescriptors.map { acceptInternal(it, emptyList()) }
+        return JsonObject(mapOf(FIELD_ANY_OF to JsonArray(subclassesJsonObjects)))
     }
 
     @OptIn(ExperimentalSerializationApi::class)

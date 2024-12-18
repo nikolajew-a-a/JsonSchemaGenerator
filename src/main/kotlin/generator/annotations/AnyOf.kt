@@ -5,5 +5,5 @@ import kotlinx.serialization.SerialInfo
 
 @OptIn(ExperimentalSerializationApi::class)
 @SerialInfo
-@Target(AnnotationTarget.CLASS)
+@Target(AnnotationTarget.PROPERTY)
 annotation class AnyOf
