@@ -13,11 +13,15 @@ object JsonSchemaGenerator {
     private const val FIELD_ITEMS = "items"
     private const val FIELD_ENUM = "enum"
     private const val FIELD_ANY_OF = "anyOf"
+    private const val FIELD_VERSION = "\$schema"
+    private const val DEFAULT_VERSION = "http://json-schema.org/draft-04/schema"
 
-    fun accept(descriptor: SerialDescriptor): JsonObject = acceptInternal(
-        descriptor = descriptor,
-        annotations = emptyList()
-    )
+    fun accept(descriptor: SerialDescriptor): JsonObject {
+        return JsonObject(
+            JsonObject(mapOf(FIELD_VERSION to JsonPrimitive(DEFAULT_VERSION))) +
+                    acceptInternal(descriptor = descriptor, annotations = emptyList())
+        )
+    }
 
     @OptIn(ExperimentalSerializationApi::class)
     private fun acceptInternal(
